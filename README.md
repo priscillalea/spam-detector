@@ -64,8 +64,8 @@ I’m deeply interested in Data Science and Machine Learning, especially after s
 **1) Clone & enter the project**
 
 ```bash
-git clone <YOUR_REPO>.git
-cd <YOUR_REPO>
+git clone <https://github.com/priscillalea/spam-detector.git>.git
+cd <https://github.com/priscillalea/spam-detector.git>
 ```
 
 **2) (Optional) Create a virtual environment**
