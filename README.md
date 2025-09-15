@@ -1,4 +1,4 @@
-# 📨 Spam Detector — Weekend ML #3
+# 📨 Spam Detector — Weekend ML #2
 
 > The third step in my weekend ML “trilogy.” After building a **K‑Drama Recommender** and an **F1 Winner Predictor**, I wanted to understand how **email spam filters** work and build one myself.
 
