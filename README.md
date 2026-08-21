@@ -1,223 +1,225 @@
-# 📨 Spam Detector — Weekend ML #2
+# Spam Detector
 
-> The third step in my weekend ML “trilogy.” After building a **K‑Drama Recommender** and an **F1 Winner Predictor**, I wanted to understand how **email spam filters** work and build one myself.
+> Email classification with classical NLP — TF-IDF vectorization and comparative model evaluation on the Enron Spam Dataset.
 
-![status](https://img.shields.io/badge/status-learning%20project-blue) ![python](https://img.shields.io/badge/python-3.10%2B-brightgreen) ![tooling](https://img.shields.io/badge/nlp-TF--IDF%20%7C%20Naive%20Bayes-lightgrey)
-
-## Table of Contents
-- [Motivation & Story](#motivation--story)
-- [What This Project Does](#what-this-project-does)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [How It Works](#how-it-works)
-- [Results (Baseline)](#results-baseline)
-- [Roadmap](#roadmap)
-- [How This Fits My Learning Path](#how-this-fits-my-learning-path)
-- [FAQ](#faq)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
-- [Contact](#contact)
+![CI](https://github.com/priscillalea/spam-detector/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## Motivation & Story
+## Overview
 
-I’m deeply interested in Data Science and Machine Learning, especially after starting the **Oracle University** courses. So far, I’ve already built a **K‑Drama Recommender** (to find similar titles I love) and an **F1 Winner Predictor** (now being improved with more datasets). Therefore, when I learned that **email spam boxes are powered by ML**, I got excited to see how it works end‑to‑end and to create my own filter. This repo is the result: a clean, reproducible **text‑classification pipeline** that turns raw emails into a binary decision: **SPAM** or **Not SPAM**.
+This project builds a spam email classifier as a rigorous ML exercise — not just as a demo, but as an experimentally correct pipeline. The emphasis is on doing the basics right: no data leakage, proper cross-validation, honest evaluation metrics, and transparent model selection.
 
-> **Dataset**: I used the **Spam Mails Dataset** by *venky73* on Kaggle: https://www.kaggle.com/datasets/venky73/spam-mails-dataset  
-> Please check the dataset page for license terms before (re)distributing the data.
+**Why classical ML?** For this dataset and task size, TF-IDF + linear models are fast, interpretable, and competitive. Deep learning and LLMs would add complexity without a clear performance justification here.
 
 ---
 
-## What This Project Does
+## Pipeline
 
-- Cleans and **preprocesses** email text (lowercase, symbols removal, **stopwords**, **stemming**).
-- Converts text to numeric features using **TF‑IDF**.
-- Trains a **Multinomial Naive Bayes** classifier.
-- Evaluates with **accuracy** and **classification_report** (precision/recall/F1).
-- **Persists** artifacts with `joblib.dump`:  
-  `spam_detector_model.pkl` (model) and `tfidf_vectorizer.pkl` (vectorizer).
-- Provides a simple **prediction function** `predict_new_email(text)` to classify new emails using the saved artifacts.
+```
+Raw CSV (Enron Spam Dataset)
+  ↓
+Data loading & validation        — drops artefact columns, validates labels
+  ↓
+Train / Test split (75/25)       — stratified by class, random_state=42
+  ↓
+Duplicate analysis               — documented, not silently hidden
+  ↓
+Preprocessing comparison         — none | stemming | lemmatization
+  ↓
+sklearn.Pipeline                 — TF-IDF fit only on train (no leakage)
+  ↓
+5-fold StratifiedKFold CV        — 12 combinations evaluated
+  ↓
+Model selection by F1-spam       — not accuracy
+  ↓
+Final evaluation on held-out test set
+  ↓
+Artefact persistence + Streamlit UI
+```
+
+---
+
+## Dataset
+
+**[Enron Spam Dataset](http://www2.aueb.gr/users/ion/data/enron-spam/)** — `enron-1` subset, processed and published by [venky73 on Kaggle](https://www.kaggle.com/datasets/venky73/spam-mails-dataset).
+
+| | Count | % |
+|---|---|---|
+| Ham (legitimate) | 3,672 | 71.0% |
+| Spam | 1,499 | 29.0% |
+| **Total** | **5,171** | |
+
+**License:** CC0 — Public Domain. Dataset is included in the repository.
+
+> **Duplicate note:** 178 duplicate texts exist in the dataset (54 appear in both train and test splits). This is documented in the training logs rather than silently removed — the cross-split overlap is small and does not materially affect metrics, but it means results are slightly optimistic.
+
+---
+
+## Preprocessing
+
+Three strategies were compared experimentally:
+
+| Strategy | Description |
+|---|---|
+| `none` | Lowercase + symbol removal only |
+| `stemming` | PorterStemmer — fast, produces non-words (e.g., "univers") |
+| `lemmatization` | WordNetLemmatizer — slower, linguistically correct |
+
+**Digits are preserved** by default. Numbers like "100%", "$1000", "1-800" are informative spam signals and removing them loses relevant features.
+
+---
+
+## Model Comparison
+
+All experiments use the same TF-IDF configuration: `ngram_range=(1,2)`, `min_df=2`, `max_df=0.95`, `sublinear_tf=True`, `max_features=50000`.
+
+Evaluated with **5-fold StratifiedKFold CV**. Primary metric: **F1-spam** (balances precision and recall for the minority class — accuracy alone is misleading with 71/29% class imbalance).
+
+| Normalisation | Classifier | F1-spam ↓ | Recall-spam | Precision-spam | ROC-AUC |
+|---|---|---|---|---|---|
+| **lemmatization** | **LinearSVC** | **0.9816** | **0.9947** | 0.9689 | **0.9989** |
+| none | LinearSVC | 0.9803 | 0.9947 | 0.9664 | 0.9987 |
+| stemming | LinearSVC | 0.9785 | 0.9911 | 0.9663 | 0.9987 |
+| lemmatization | ComplementNB | 0.9634 | 0.9600 | 0.9670 | 0.9973 |
+| none | ComplementNB | 0.9616 | 0.9564 | 0.9668 | 0.9974 |
+| stemming | MultinomialNB | 0.9186 | 0.8585 | 0.9879 | 0.9973 |
+
+**MultinomialNB note:** High precision (0.988) but low recall (0.859) — it misses ~14% of spam. For a spam filter, false negatives (spam that passes) are costly.
+
+**Normalisation finding:** Lemmatization gives a small but consistent edge over stemming and baseline. The difference is small (~0.3pp F1), which is expected — the Enron dataset is relatively clean text.
+
+---
+
+## Final Model
+
+**LinearSVC + Lemmatization**, wrapped in `CalibratedClassifierCV` to enable probability outputs.
+
+**Test-set results (held-out, never seen during training or model selection):**
+
+| Metric | Ham | Spam |
+|---|---|---|
+| Precision | 0.99 | 0.98 |
+| Recall | 0.99 | 0.98 |
+| F1-score | 0.99 | 0.98 |
+| **ROC-AUC** | | **0.9990** |
+
+**Why LinearSVC?** It consistently ranked first across all normalisation strategies. For TF-IDF sparse features, linear models with a large margin (SVM) generally outperform probabilistic models. LinearSVC with `class_weight='balanced'` handles the class imbalance correctly without requiring oversampling.
+
+**Why not Logistic Regression?** LR showed high recall-spam (0.998) but lower precision (0.914), meaning it over-predicts spam. LinearSVC achieves a better precision/recall balance for this dataset.
+
+> **Note on probabilities:** The UI displays calibrated probability scores from `CalibratedClassifierCV`. These are approximate — they reflect relative model confidence, not ground-truth certainty.
 
 ---
 
 ## Project Structure
 
 ```
-.
-├── main.py                  # training + evaluation + quick tests
-├── spam_ham_dataset.csv     # local dataset (see Kaggle link above for license)
-├── spam_detector_model.pkl  # trained model (generated by main.py)
-└── tfidf_vectorizer.pkl     # TF‑IDF vectorizer (generated by main.py)
+spam-detector/
+├── src/
+│   └── spam_detector/
+│       ├── config.py           # paths and constants
+│       ├── preprocessing.py    # text cleaning, 3 normalisation strategies
+│       ├── train.py            # full pipeline: load → split → CV → evaluate → save
+│       ├── evaluate.py         # metrics report generation
+│       └── predict.py          # SpamDetector class (loads model once)
+├── app/
+│   └── app.py                  # Streamlit UI
+├── notebooks/
+│   └── 01_eda.ipynb            # EDA and visualisations
+├── tests/
+│   ├── test_preprocessing.py   # 20 unit tests
+│   ├── test_predict.py         # 11 integration tests
+│   └── test_pipeline.py        # 5 structural correctness tests
+├── models/                     # generated artefacts (gitignored)
+├── reports/
+│   └── model_comparison.md     # full experiment results
+├── spam_ham_dataset.csv        # Enron dataset (CC0)
+├── requirements.txt
+├── pyproject.toml              # ruff + pytest config
+└── .github/workflows/ci.yml    # CI: lint + test on push
 ```
 
 ---
 
 ## Getting Started
 
-**Requirements**
-- Python 3.10+ (also tested on 3.13)
-- `pip`
-
-**1) Clone & enter the project**
+**Requirements:** Python 3.10+
 
 ```bash
-git clone <https://github.com/priscillalea/spam-detector.git>.git
-cd <https://github.com/priscillalea/spam-detector.git>
-```
+git clone https://github.com/priscillalea/spam-detector.git
+cd spam-detector
 
-**2) (Optional) Create a virtual environment**
-
-```bash
+# Create virtual environment
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
-source .venv/bin/activate
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # Linux/macOS
+
+pip install -r requirements.txt
 ```
 
-**3) Install dependencies**
+**Train the model:**
 
 ```bash
-pip install -U pandas scikit-learn nltk joblib
+python -m spam_detector.train
+# Working directory: src/
+cd src
+python -m spam_detector.train
 ```
 
-> The script downloads NLTK stopwords on first run.
+This will:
+- Run 12 model/preprocessing combinations with 5-fold CV
+- Print a ranked comparison table
+- Save `models/spam_detector_model.pkl` and `models/label_encoder.json`
+- Write `reports/model_comparison.md`
 
-**4) Place the dataset** `spam_ham_dataset.csv` in the project root.
-
-**5) Train & evaluate**
+**Run the app:**
 
 ```bash
-python main.py
+streamlit run app/app.py
 ```
 
-This will print the TF‑IDF shape, accuracy and a classification report, and it will save two files: `spam_detector_model.pkl` and `tfidf_vectorizer.pkl`.
+**Run tests:**
 
----
-
-## Usage
-
-### A) Use the helper function (recommended)
-
-```python
-from main import predict_new_email
-
-print(predict_new_email("Congratulations! You've won a free prize — click here!"))
-print(predict_new_email("Hi team, please find the updated report attached. Thanks!"))
-```
-
-`predict_new_email` loads the saved model and vectorizer, applies the same preprocessing and returns `"SPAM"` or `"Not SPAM"`.
-
-### B) Load artifacts manually
-
-```python
-import joblib
-from main import preprocess_text
-
-model = joblib.load("spam_detector_model.pkl")
-vectorizer = joblib.load("tfidf_vectorizer.pkl")
-
-X = vectorizer.transform([preprocess_text("URGENT! Your account was compromised. Log in now!")])
-print("SPAM" if model.predict(X)[0] == 1 else "Not SPAM")
+```bash
+python -m pytest tests/ -v
 ```
 
 ---
 
-## How It Works
+## Interpretability
 
-1. **Label encoding**  
-   The dataset’s `label` column (`spam`/`ham`) is mapped to numeric `label_num` (`1`/`0`).
+The app shows which tokens in each message pushed the model toward spam or ham. This uses the LinearSVC decision boundary (coefficient vector) — only tokens present in the specific message are shown, not global feature importance.
 
-2. **Preprocessing**  
-   - lowercasing  
-   - removing punctuation and digits  
-   - removing **English stopwords** (NLTK)  
-   - **stemming** with **PorterStemmer**
+For Naive Bayes, the equivalent is the log-probability ratio: `log P(token|spam) - log P(token|ham)`.
 
-3. **Vectorization**  
-   **TfidfVectorizer** is fit on the preprocessed text and transforms each message into a sparse vector.
-
-4. **Train/test split**  
-   75/25 split with `random_state=42` for reproducibility.
-
-5. **Model**  
-   **MultinomialNB**, a strong baseline for text classification.
-
-6. **Evaluation**  
-   `accuracy_score` and `classification_report` (per‑class precision/recall/F1).
-
-7. **Persistence**  
-   `joblib.dump` stores the trained model and vectorizer for later use; the prediction helper reloads them on demand.
+This is a meaningful and technically honest form of local explanation for linear models — no LIME or SHAP needed.
 
 ---
 
-## Results (Baseline)
+## Limitations
 
-Your exact numbers will vary depending on random splits and preprocessing. The goal here is a **clean, explainable baseline** that you can iterate on. Check the console output after `python main.py` for the full classification report.
-
----
-
-## Roadmap
-
-- [ ] Replace **stemming** with **lemmatization** and compare.  
-- [ ] Try **n‑grams** in TF‑IDF (e.g., `(1,2)` and `(1,3)`).  
-- [ ] Address **class imbalance** (oversampling or class weights).  
-- [ ] Compare models: **Logistic Regression**, **Linear SVM**, **Complement NB**.  
-- [ ] Add **cross‑validation** and hyperparameter **tuning**.  
-- [ ] **Calibrate probabilities** and adjust decision thresholds (optimize Recall for the *spam* class).  
-- [ ] Expose a small **API** (Flask/FastAPI) or **CLI**.  
-- [ ] Add a **notebook** for EDA and **error analysis**.  
-- [ ] Publish a short **Model Card** (limitations, risks, bias).
+- **Domain:** Trained on Enron employee emails (~2000s). Performance on modern spam (social media phishing, HTML-heavy newsletters) may differ significantly.
+- **Language:** English only. Stopwords, stemming, and lemmatization are English-specific.
+- **No drift monitoring:** The model has no mechanism to detect when the spam distribution shifts over time.
+- **Probabilities:** The displayed confidence scores are calibrated approximations, not ground-truth probabilities.
+- **Static model:** No online learning or retraining pipeline.
 
 ---
 
-## How This Fits My Learning Path
+## Dataset Attribution
 
-- **K‑Drama Recommender** → text representation & **semantic similarity**.  
-- **F1 Winner Predictor** → pipelines on **tabular/time‑based** data, metrics and validation.  
-- **Spam Detector** → **supervised NLP** with a classic TF‑IDF + NB pipeline.  
-
-Together, these weekend projects show my progression in **collecting, cleaning, modeling, evaluating**, and — most importantly — **telling the story behind the code**.
-
----
-
-## FAQ
-
-**Is this production‑ready?**  
-No — this is an educational baseline. A production system would require stronger evaluation, monitoring, security, privacy, and continuous retraining strategies.
-
-**Can I use another language (e.g., Portuguese emails)?**  
-Yes, but you should adapt stopwords and potentially the preprocessing/tokenization accordingly.
-
-**Where do I ask questions or report issues?**  
-Open an issue in the repository. I’m happy to improve this project with feedback!
-
----
-
-## Contributing
-
-Issues and pull requests are welcome. If you plan a larger contribution, please open an issue first to discuss scope and direction.
+Dataset derived from the [Enron Spam Dataset](http://www2.aueb.gr/users/ion/data/enron-spam/) (Metsis et al., 2006), processed and published on Kaggle by [venky73](https://www.kaggle.com/venky73) under **CC0 — Public Domain**.
 
 ---
 
 ## License
 
-Code is released under the **MIT License**   
-The **dataset is not included**; please follow the **Kaggle** license and usage terms on the dataset page linked above.
+Code: [MIT License](LICENSE)  
+Dataset: CC0 — Public Domain (see attribution above)
 
 ---
-
-## Acknowledgments
-
-- **Oracle University** for sparking this learning path.  
-- **Kaggle** and **venky73** for the dataset.  
-- The **NLP/ML** community for the countless references and ideas.
-
----
-
-## Contact
 
 **Priscilla Leandro** — [LinkedIn](https://www.linkedin.com/in/priscillaleandro/) · [GitHub](https://github.com/priscillalea)

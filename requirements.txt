@@ -1,0 +1,18 @@
+# Core ML
+pandas>=2.2.3
+scikit-learn>=1.5.2
+nltk>=3.9.1
+joblib>=1.5.2
+
+# Interface
+streamlit>=1.39.0
+
+# Visualization (EDA notebook)
+matplotlib>=3.9.0
+seaborn>=0.13.0
+
+# Linting / formatting (dev)
+ruff>=0.6.0
+
+# Testing (dev)
+pytest>=8.3.0
