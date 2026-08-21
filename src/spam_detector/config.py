@@ -6,8 +6,23 @@ All other modules import from here instead of hard-coding strings.
 
 from pathlib import Path
 
-# ── Repository root (two levels up from this file: src/spam_detector/config.py)
-ROOT_DIR: Path = Path(__file__).resolve().parents[2]
+def _find_project_root() -> Path:
+    """Locate the project root by walking up until requirements.txt is found.
+
+    This is more robust than counting parent levels because it works correctly
+    regardless of where the package is installed or run from (local dev,
+    Streamlit Cloud, CI, etc.).
+    """
+    here = Path(__file__).resolve()
+    for directory in [here, *here.parents]:
+        if (directory / "requirements.txt").exists():
+            return directory
+    # Fallback: three levels up from src/spam_detector/config.py
+    return here.parents[2]
+
+
+# ── Repository root ───────────────────────────────────────────────────────────
+ROOT_DIR: Path = _find_project_root()
 
 # ── Data
 DATA_DIR: Path = ROOT_DIR
