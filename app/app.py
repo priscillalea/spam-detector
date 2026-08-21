@@ -21,7 +21,6 @@ from spam_detector.predict import SpamDetector
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Spam Detector",
-    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -410,7 +409,7 @@ st.markdown("""
 <div class="app-header">
   <div>
     <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-      <p class="app-title">🛡️ Spam Detector</p>
+      <p class="app-title">Spam Detector</p>
       <span class="badge-tech">TF-IDF · LinearSVC · NLP</span>
     </div>
     <p class="app-subtitle">
@@ -427,10 +426,7 @@ left_col, right_col = st.columns([3, 2], gap="large")
 with left_col:
     # ── Model missing warning ─────────────────────────────────────────────────
     if detector is None:
-        st.error(
-            "⚠️ Model not found. Run `python -m spam_detector.train` first.",
-            icon="🚨",
-        )
+        st.error("Model not found. Run `python -m spam_detector.train` first.")
         st.stop()
 
     # ── Quick samples ─────────────────────────────────────────────────────────
@@ -438,15 +434,15 @@ with left_col:
 
     sample_col1, sample_col2, sample_col3 = st.columns(3)
     with sample_col1:
-        if st.button("🎁 Spam sample", key="btn_spam_sample", use_container_width=True,
+        if st.button("Spam sample", key="btn_spam_sample", use_container_width=True,
                      on_click=_load_sample, args=(SAMPLE_SPAM,)):
             pass
     with sample_col2:
-        if st.button("📧 Legitimate email", key="btn_ham_sample", use_container_width=True,
+        if st.button("Legitimate email", key="btn_ham_sample", use_container_width=True,
                      on_click=_load_sample, args=(SAMPLE_HAM,)):
             pass
     with sample_col3:
-        if st.button("🎣 Phishing attempt", key="btn_phishing_sample", use_container_width=True,
+        if st.button("Phishing attempt", key="btn_phishing_sample", use_container_width=True,
                      on_click=_load_sample, args=(SAMPLE_PHISHING,)):
             pass
 
@@ -464,12 +460,12 @@ with left_col:
         key=f"email_input_{st.session_state.textarea_key}",
     )
 
-    analyze_clicked = st.button("⚡ Analyze Email", key="btn_analyze")
+    analyze_clicked = st.button("Analyze Email", key="btn_analyze")
 
     # ── Result ────────────────────────────────────────────────────────────────
     if analyze_clicked:
         if not email_text.strip():
-            st.warning("Please enter some email text before analyzing.", icon="⚠️")
+            st.warning("Please enter some email text before analyzing.")
         else:
             with st.spinner("Analyzing…"):
                 result = detector.predict(email_text)
@@ -489,7 +485,6 @@ with left_col:
 
             cls = "spam" if result.is_spam else "ham"
             label_text = "SPAM" if result.is_spam else "LEGITIMATE"
-            label_icon = "🚫" if result.is_spam else "✅"
             desc = (
                 "This message shows characteristics commonly associated with spam email."
                 if result.is_spam
@@ -502,7 +497,7 @@ with left_col:
             # Result card HTML
             st.markdown(f"""
 <div class="result-card {cls}" id="result-card">
-  <div class="result-label {cls}">{label_icon} {label_text}</div>
+  <div class="result-label {cls}">{label_text}</div>
   <p class="result-description">{desc}</p>
 
   <div class="prob-row">
@@ -591,7 +586,6 @@ with left_col:
         # Empty state prompt
         st.markdown("""
 <div class="empty-state">
-  <div class="empty-icon">📬</div>
   <p class="empty-text">
     Paste an email above and click <strong>Analyze Email</strong><br>
     to see the classification result.

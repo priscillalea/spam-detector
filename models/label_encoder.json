@@ -1,0 +1,71 @@
+{
+  "normalisation_strategy": "NormStrategy.LEMMATIZATION",
+  "classifier": "LinearSVC",
+  "tfidf_params": {
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "max_df": 0.95,
+    "sublinear_tf": true,
+    "max_features": 50000
+  },
+  "cv_results_top5": [
+    {
+      "normalisation": "lemmatization",
+      "classifier": "LinearSVC",
+      "cv_f1_spam_mean": 0.981589955926937,
+      "cv_f1_spam_std": 0.006534826608744986,
+      "cv_recall_spam_mean": 0.9946587301587302,
+      "cv_precision_spam_mean": 0.9688996985582203,
+      "cv_roc_auc_mean": 0.9988555894962067,
+      "cv_accuracy_mean": 0.9891692716993681,
+      "elapsed_s": 3.1
+    },
+    {
+      "normalisation": "none",
+      "classifier": "LinearSVC",
+      "cv_f1_spam_mean": 0.9802867936571478,
+      "cv_f1_spam_std": 0.00550833563207304,
+      "cv_recall_spam_mean": 0.9946587301587302,
+      "cv_precision_spam_mean": 0.9663512911173827,
+      "cv_roc_auc_mean": 0.9987455885795994,
+      "cv_accuracy_mean": 0.988395078150981,
+      "elapsed_s": 2.9
+    },
+    {
+      "normalisation": "stemming",
+      "classifier": "LinearSVC",
+      "cv_f1_spam_mean": 0.9785066404968047,
+      "cv_f1_spam_std": 0.004783093613617539,
+      "cv_recall_spam_mean": 0.9910992063492063,
+      "cv_precision_spam_mean": 0.9663101955044959,
+      "cv_roc_auc_mean": 0.9986696475776695,
+      "cv_accuracy_mean": 0.9873648154306618,
+      "elapsed_s": 2.8
+    },
+    {
+      "normalisation": "lemmatization",
+      "classifier": "ComplementNB",
+      "cv_f1_spam_mean": 0.9634447046372134,
+      "cv_f1_spam_std": 0.012013436938582167,
+      "cv_recall_spam_mean": 0.9599642857142857,
+      "cv_precision_spam_mean": 0.9670329249120677,
+      "cv_roc_auc_mean": 0.9972786298295373,
+      "cv_accuracy_mean": 0.9788540073162622,
+      "elapsed_s": 3.6
+    },
+    {
+      "normalisation": "none",
+      "classifier": "ComplementNB",
+      "cv_f1_spam_mean": 0.961550085963086,
+      "cv_f1_spam_std": 0.011180943952166683,
+      "cv_recall_spam_mean": 0.9564087301587302,
+      "cv_precision_spam_mean": 0.966788894640627,
+      "cv_roc_auc_mean": 0.9973902362227406,
+      "cv_accuracy_mean": 0.9778227469238445,
+      "elapsed_s": 2.9
+    }
+  ]
+}

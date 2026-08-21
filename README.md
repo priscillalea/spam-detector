@@ -181,6 +181,16 @@ This will:
 streamlit run app/app.py
 ```
 
+**Deploy to Streamlit Community Cloud (free):**
+
+1. Push the repository to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io) and connect the repo
+3. Set **Main file path** to `app/app.py`
+4. Add a `packages.txt` file at the project root if any system dependencies are needed (not required here)
+5. The app will be live at `https://<your-username>-spam-detector.streamlit.app`
+
+> **Note:** Streamlit Cloud runs `train.py` is not executed automatically on deploy. Include the trained `models/` artefacts in the repo, or add a startup script. The simplest approach for a portfolio project is to commit `models/spam_detector_model.pkl` and `models/label_encoder.json` (even if the raw `.pkl` files are gitignored locally, you can push them once for the live demo).
+
 **Run tests:**
 
 ```bash
